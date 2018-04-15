@@ -3,7 +3,6 @@
 //------------------------------------------------------------------------------
 void execCommand(struct cmd* cmd) {
     struct execcmd* execcmd = (struct execcmd*) cmd;
-    char* arguments[] = {NULL};
-    int execvp(execcmd->argv[0], arguments);
+    int execvp(execcmd->argv[0], execcmd->argv[0] + 1);
 }
 //------------------------------------------------------------------------------
