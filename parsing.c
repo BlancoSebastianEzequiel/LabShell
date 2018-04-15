@@ -1,5 +1,5 @@
 #include "parsing.h"
-#include "functions.c"
+#include "functions.h"
 // parses an argument of the command stream input
 static char* get_token(char* buf, int idx) {
 

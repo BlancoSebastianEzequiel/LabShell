@@ -1,5 +1,5 @@
 #include "exec.h"
-#include "functions.c"
+#include "functions.h"
 
 // sets the "key" argument with the key part of
 // the "arg" argument and null-terminates it
@@ -46,8 +46,7 @@ static void set_environ_vars(char** eargv, int eargc) {
 // - if O_CREAT is used, add S_IWUSR and S_IRUSR
 // 	to make it a readable normal file
 static int open_redir_fd(char* file) {
-
-	// Your code here
+	return 0;  // Your code here
 }
 
 // executes a command - does not return

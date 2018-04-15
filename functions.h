@@ -1,21 +1,16 @@
-#include <stdlib.h>
-#include <unistd.h>
-#include "functions.h"
+#ifndef LABSHELL_H
+#define LABSHELL_H
+//------------------------------------------------------------------------------
+// INCLUDES
+//------------------------------------------------------------------------------
+#include "types.h"
 //------------------------------------------------------------------------------
 // EXEC COMMAND
 //------------------------------------------------------------------------------
-void execCommand(struct cmd* cmd) {
-    struct execcmd* execcmd = (struct execcmd*) cmd;
-    const char* file = (const char*) execcmd->argv[0];
-    execvp(file, execcmd->argv);
-}
+void execCommand(struct cmd* cmd);
 //------------------------------------------------------------------------------
 // EXPAND ENVIRONMENT VARIABLES
 //------------------------------------------------------------------------------
-char* expandEnvironmentVariables(char* arg) {
-    if (arg[0] != '$') return arg;
-    char* value = getenv(arg+1);
-    if (value == NULL) return arg;
-    return value;
-}
+char* expandEnvironmentVariables(char* arg);
 //------------------------------------------------------------------------------
+#endif // LABSHELL_H
