@@ -1,5 +1,5 @@
 #include "parsing.h"
-
+#include "functions.c"
 // parses an argument of the command stream input
 static char* get_token(char* buf, int idx) {
 
@@ -94,10 +94,7 @@ static bool parse_environ_var(struct execcmd* c, char* arg) {
 // - expand it and copy the value
 // 	 to 'arg' 
 static char* expand_environ_var(char* arg) {
-
-	// Your code here
-
-	return arg;
+	return expandEnvironmentVariables(arg);  // Your code here
 }
 
 // parses one single command having into account:
