@@ -61,6 +61,7 @@ void exec_cmd(struct cmd* cmd) {
 
 		case EXEC:
 			// spawns a command
+
 			execCommand(cmd); // Your code here
 			printf("Commands are not yet implemented\n");
 			_exit(-1);
