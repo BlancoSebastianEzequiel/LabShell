@@ -1,4 +1,5 @@
 #include "exec.h"
+#include "functions.c"
 
 // sets the "key" argument with the key part of
 // the "arg" argument and null-terminates it
@@ -60,8 +61,7 @@ void exec_cmd(struct cmd* cmd) {
 
 		case EXEC:
 			// spawns a command
-			//
-			// Your code here
+			execCommand(cmd); // Your code here
 			printf("Commands are not yet implemented\n");
 			_exit(-1);
 			break;
