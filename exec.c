@@ -22,7 +22,7 @@ static void get_environ_value(char* arg, char* value, int idx) {
 
 	value[j] = END_STRING;
 }
-
+*/
 // sets the environment variables passed
 // in the command line
 //
@@ -31,10 +31,9 @@ static void get_environ_value(char* arg, char* value, int idx) {
 // 	get the index where the '=' is
 // - 'get_environ_*()' can be useful here
 static void set_environ_vars(char** eargv, int eargc) {
-
-	// Your code here
+    setEnvironmentVariables(eargv, eargc); // Your code here
 } 
-
+/*
 // opens the file in which the stdin/stdout or
 // stderr flow will be redirected, and returns
 // the file descriptor
@@ -58,17 +57,19 @@ void exec_cmd(struct cmd* cmd) {
 
 	switch (cmd->type) {
 
-		case EXEC:
+		case EXEC: {
 			// spawns a command
+			struct execcmd* execcmd = (struct execcmd*) cmd;
+			set_environ_vars(execcmd->eargv, execcmd->eargc);
 			execCommand(cmd); // Your code here
 			printf("Commands are not yet implemented\n");
 			_exit(-1);
 			break;
+		}
 
 		case BACK: {
 			// runs a command in background
-			//
-			// Your code here
+			runBackground(cmd);  //Your code here
 			printf("Background process are not yet implemented\n");
 			_exit(-1);
 			break;

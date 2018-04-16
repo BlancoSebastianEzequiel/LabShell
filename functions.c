@@ -5,13 +5,69 @@
 #include <unistd.h>
 #include <string.h>
 #include <pwd.h>
+#include "exec.h"
+#include "printstatus.h"
+#include "runcmd.h"
+//******************************************************************************
+// INICIO FUNCIONES ESTATICAS
+//******************************************************************************
+//------------------------------------------------------------------------------
+// IS EQUAL TO IN N BYTES
+//------------------------------------------------------------------------------
+static int isEqualToInNBytes(const char* str, const char* cmp, size_t bytes) {
+    for (size_t i = 0; i < bytes; ++i) {
+        if (str[i] != cmp[i]) return false;
+    }
+    return true;
+}
+//------------------------------------------------------------------------------
+// FIND FIRS CARACTER AFTER SPACE
+//------------------------------------------------------------------------------
+static int findFirstCaracterAfterSpace(const char* str, int offset) {
+    size_t size = strlen(str);
+    for (size_t i = 0; i < size; ++i) {
+        if (str[i] == SPACE) continue;
+        return i+offset;
+    }
+    return -1;
+}
+//------------------------------------------------------------------------------
+// GET ENVIRONMENT VALUE
+//------------------------------------------------------------------------------
+static void getEnvironmentValue(char* arg, char* value, int idx) {
+    int i, j;
+    for (i = (idx + 1), j = 0; i < strlen(arg); i++, j++) value[j] = arg[i];
+    value[j] = END_STRING;
+}
+//------------------------------------------------------------------------------
+// GET ENVIRONMENT KEY
+//------------------------------------------------------------------------------
+static void getEnvironmentKey(char* arg, char* key) {
+    int i;
+    for (i = 0; arg[i] != '='; i++) key[i] = arg[i];
+    key[i] = END_STRING;
+}
+//------------------------------------------------------------------------------
+// MOVE COMMAND
+//------------------------------------------------------------------------------
+void moveCommand(struct cmd* cmdDest, struct cmd* cmdSrc) {
+    cmdDest->type = cmdSrc->type;
+    cmdDest->pid = cmdSrc->pid;
+    strncpy(cmdDest->scmd, cmdSrc->scmd, strlen(cmdSrc->scmd));
+}
+//******************************************************************************
+// FIN FUNCIONES ESTATICAS
+//******************************************************************************
 //------------------------------------------------------------------------------
 // EXEC COMMAND
 //------------------------------------------------------------------------------
 void execCommand(struct cmd* cmd) {
     struct execcmd* execcmd = (struct execcmd*) cmd;
+    if (execcmd->argc == 0) return;
     const char* file = (const char*) execcmd->argv[0];
-    execvp(file, execcmd->argv);
+    if (execvp(file, execcmd->argv) == -1) {
+        perr("ERROR function execvp() returned -1");
+    }
 }
 //------------------------------------------------------------------------------
 // EXPAND ENVIRONMENT VARIABLES
@@ -77,23 +133,42 @@ int printWorkingDirectory(char* cmd) {
     return true;
 }
 //------------------------------------------------------------------------------
-// IS EQUAL TO IN N BYTES
+// SET ENVIRONMENT VARIABLES
 //------------------------------------------------------------------------------
-static int isEqualToInNBytes(const char* str, const char* cmp, size_t bytes) {
-    for (size_t i = 0; i < bytes; ++i) {
-        if (str[i] != cmp[i]) return false;
+void setEnvironmentVariables(char** eargv, int eargc) {
+    for (size_t i = 0; i < eargc; ++i) {
+        int idx = block_contains(eargv[i], '=');
+        if (idx == -1) continue;
+        size_t size = strlen(eargv[i]);
+        char* key = (char*) malloc(sizeof(char) * (idx + 1));
+        if (key == NULL) continue;
+        char* value = (char*) malloc(sizeof(char) * (size - idx));
+        if (key == NULL) {
+            free(key);
+            continue;
+        }
+        getEnvironmentKey(eargv[i], key);
+        getEnvironmentValue(eargv[i], value, idx);
+        if (setenv(key, value, 0) == -1) {
+            perr("ERROR: function setenv(%s, %s, 0) returned -1", key, value);
+        }
+        free(key);
+        free(value);
     }
-    return true;
 }
 //------------------------------------------------------------------------------
-// FIND FIRS CARACTER AFTER SPACE
+// RUN BACKGROUND
 //------------------------------------------------------------------------------
-static int findFirstCaracterAfterSpace(const char* str, int offset) {
-    size_t size = strlen(str);
-    for (size_t i = 0; i < size; ++i) {
-        if (str[i] == SPACE) continue;
-        return i+offset;
-    }
-    return -1;
+void runBackground(struct cmd* cmd) {
+    struct backcmd* backcmd = (struct backcmd*) cmd;
+    execCommand(backcmd->c);
+}
+//------------------------------------------------------------------------------
+// EXEC BACKGROUND
+//------------------------------------------------------------------------------
+void execBackground(struct cmd* cmd, pid_t* p) {
+    if (cmd->type != BACK) return;
+    print_back_info(cmd);
+    *p = getpid();
 }
 //------------------------------------------------------------------------------

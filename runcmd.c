@@ -1,5 +1,5 @@
 #include "runcmd.h"
-
+#include "functions.h"
 int status = 0;
 struct cmd* parsed_pipe;
 
@@ -31,7 +31,7 @@ int run_cmd(char* cmd) {
 	
 	// forks and run the command
 	if ((p = fork()) == 0) {
-		
+
 		// keep a reference
 		// to the parsed pipe cmd
 		// so it can be freed later
@@ -51,7 +51,7 @@ int run_cmd(char* cmd) {
 	// - print info about it with 
 	// 	'print_back_info()'
 	//
-	// Your code here
+	execBackground(parsed, &p); // Your code here
 
 	// waits for the process to finish
 	waitpid(p, &status, 0);
