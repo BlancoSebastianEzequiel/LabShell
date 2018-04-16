@@ -5,7 +5,7 @@ static char* get_token(char* buf, int idx) {
 
 	char* tok;
 	int i;
-	
+
 	tok = (char*)calloc(ARGSIZE, sizeof(char));
 	i = 0;
 
@@ -175,9 +175,9 @@ static struct cmd* parse_cmd(char* buf_cmd) {
 struct cmd* parse_line(char* buf) {
 	
 	struct cmd *r, *l;
-	
+
 	char* right = split_line(buf, '|');
-	
+
 	l = parse_cmd(buf);
 	r = parse_cmd(right);
 	

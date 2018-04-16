@@ -1,6 +1,6 @@
 #include "exec.h"
 #include "functions.h"
-
+/*
 // sets the "key" argument with the key part of
 // the "arg" argument and null-terminates it
 static void get_environ_key(char* arg, char* key) {
@@ -48,7 +48,7 @@ static void set_environ_vars(char** eargv, int eargc) {
 static int open_redir_fd(char* file) {
 	return 0;  // Your code here
 }
-
+*/
 // executes a command - does not return
 //
 // Hint:
