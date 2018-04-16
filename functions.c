@@ -7,7 +7,6 @@
 #include <pwd.h>
 #include "exec.h"
 #include "printstatus.h"
-#include "runcmd.h"
 //******************************************************************************
 // INICIO FUNCIONES ESTATICAS
 //******************************************************************************
@@ -161,7 +160,7 @@ void setEnvironmentVariables(char** eargv, int eargc) {
 //------------------------------------------------------------------------------
 void runBackground(struct cmd* cmd) {
     struct backcmd* backcmd = (struct backcmd*) cmd;
-    execCommand(backcmd->c);
+    exec_cmd(backcmd->c);
 }
 //------------------------------------------------------------------------------
 // EXEC BACKGROUND
