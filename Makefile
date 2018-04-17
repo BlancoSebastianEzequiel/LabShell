@@ -20,4 +20,7 @@ valgrind: all
 clean:
 	rm -f sh *.o *.asm
 
+code:
+	./code.sh
+
 .PHONY: clean run
