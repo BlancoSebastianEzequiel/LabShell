@@ -22,6 +22,7 @@ static bool parse_redir_flow(struct execcmd* c, char* arg) {
 
 	int inIdx, outIdx;
 
+	if (parsing(c, arg)) return true;  // Challenge Parte 2: Flujo estándar
 	// flow redirection for output
 	if ((outIdx = block_contains(arg, '>')) >= 0) {
 		switch (outIdx) {
@@ -163,8 +164,8 @@ static struct cmd* parse_cmd(char* buf_cmd) {
 	// checks if the background symbol is after
 	// a redir symbol, in which case
 	// it does not have to run in in the 'back'
-	if ((idx = block_contains(buf_cmd, '&')) >= 0 &&
-			buf_cmd[idx - 1] != '>')
+	if ((idx = block_contains(buf_cmd, '&')) >= 0 && buf_cmd[idx - 1] != '>' &&
+			buf_cmd[idx + 1] != '>')
 		return parse_back(buf_cmd);
 		
 	return parse_exec(buf_cmd);

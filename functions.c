@@ -181,10 +181,17 @@ int openRedirFd(char* file) {
     if (size == 0) return -1;
     if (size == 1 && isdigit(file)) return (int) *file;
     int idx = block_contains(file, '&');
-    if (idx >= 0 && size==2) return atoi(file+idx+1);
+    if (idx >= 0 && size == 2) return atoi(file + idx + 1);
+    int append = false;
+    if (file[0] == '>') append = true;  // Challenge Parte 2: Flujo estándar
 
+    int fd;
     int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;  // 0644
-    int fd = open(file, O_RDWR | O_CREAT, mode);
+    if (append) {
+        fd = open(&file[1], O_RDWR | O_CREAT | O_APPEND, mode);
+    } else {
+        fd = open(file, O_RDWR | O_CREAT, mode);
+    }
     if (fd == -1) {
         perr("ERROR: open failed with file %s in function openRedirFd()", file);
     }
@@ -233,5 +240,26 @@ void runPipe(struct cmd* cmd) {
         if (redir(pipeFd[0], STDIN_FILENO) == -1) perr("ERROR redir failed");
         exec_cmd(pipecmd->rightcmd);
     }
+}
+//------------------------------------------------------------------------------
+// PARSING
+//------------------------------------------------------------------------------
+int parsing(struct execcmd* c, char* arg) {
+    size_t size = strlen(arg);
+    size_t append = 0;
+    size_t redirErrOut = 0;
+    for (size_t i = 0; i < size; ++i) {
+        if (arg[i] == '>' && (i == 0 || i == 1)) append++;
+        if (arg[i] == '&' && i == 0) redirErrOut++;
+    }
+
+    if (redirErrOut == 1 && append == 1) {
+        strcpy(c->out_file, &arg[2]);
+        strcpy(c->err_file, &arg[2]);
+        free(arg);
+        c->type = REDIR;
+        return true;
+    }
+    return false;
 }
 //------------------------------------------------------------------------------
