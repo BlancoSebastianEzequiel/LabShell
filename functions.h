@@ -35,6 +35,6 @@ void runBackground(struct cmd* cmd);
 //------------------------------------------------------------------------------
 // EXEC BACKGROUND
 //------------------------------------------------------------------------------
-void execBackground(struct cmd* cmd, pid_t* p);
+int execBackground(struct cmd* cmd);
 //------------------------------------------------------------------------------
 #endif // FUNCTIONS_H

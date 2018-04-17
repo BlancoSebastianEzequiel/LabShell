@@ -51,10 +51,9 @@ int run_cmd(char* cmd) {
 	// - print info about it with 
 	// 	'print_back_info()'
 	//
-	execBackground(parsed, &p); // Your code here
-
+	// Your code here
 	// waits for the process to finish
-	waitpid(p, &status, 0);
+	if (!execBackground(parsed)) waitpid(p, &status, 0);
 	
 	print_status_info(parsed);
 	

@@ -165,9 +165,9 @@ void runBackground(struct cmd* cmd) {
 //------------------------------------------------------------------------------
 // EXEC BACKGROUND
 //------------------------------------------------------------------------------
-void execBackground(struct cmd* cmd, pid_t* p) {
-    if (cmd->type != BACK) return;
+int execBackground(struct cmd* cmd) {
+    if (cmd->type != BACK) return false;
     print_back_info(cmd);
-    *p = getpid();
+    return true;
 }
 //------------------------------------------------------------------------------
