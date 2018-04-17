@@ -45,7 +45,7 @@ static void set_environ_vars(char** eargv, int eargc) {
 // - if O_CREAT is used, add S_IWUSR and S_IRUSR
 // 	to make it a readable normal file
 static int open_redir_fd(char* file) {
-	return 0;  // Your code here
+	return openRedirFd(file);  // Your code here
 }
 */
 // executes a command - does not return
@@ -77,8 +77,7 @@ void exec_cmd(struct cmd* cmd) {
 
 		case REDIR: {
 			// changes the input/output/stderr flow
-			//
-			// Your code here
+			runRedir(cmd); // Your code here
 			printf("Redirections are not yet implemented\n");
 			_exit(-1);
 			break;

@@ -7,6 +7,8 @@
 #include <pwd.h>
 #include "exec.h"
 #include "printstatus.h"
+#include <ctype.h>
+#include <stdlib.h>
 //******************************************************************************
 // INICIO FUNCIONES ESTATICAS
 //******************************************************************************
@@ -47,12 +49,13 @@ static void getEnvironmentKey(char* arg, char* key) {
     key[i] = END_STRING;
 }
 //------------------------------------------------------------------------------
-// MOVE COMMAND
+// REDIR
 //------------------------------------------------------------------------------
-void moveCommand(struct cmd* cmdDest, struct cmd* cmdSrc) {
-    cmdDest->type = cmdSrc->type;
-    cmdDest->pid = cmdSrc->pid;
-    strncpy(cmdDest->scmd, cmdSrc->scmd, strlen(cmdSrc->scmd));
+static int redir(int oldFd, int newFd) {
+    if (newFd == -1 || oldFd == -1) return 0;
+    int fd = dup2(oldFd, newFd);
+    if (fd == -1) perr("ERROR: dup2(%d, %d) filed", oldFd, newFd);
+    return fd;
 }
 //******************************************************************************
 // FIN FUNCIONES ESTATICAS
@@ -169,5 +172,40 @@ int execBackground(struct cmd* cmd) {
     if (cmd->type != BACK) return false;
     print_back_info(cmd);
     return true;
+}
+//------------------------------------------------------------------------------
+// OPEN REDIR FD
+//------------------------------------------------------------------------------
+int openRedirFd(char* file) {
+    size_t size = strlen(file);
+    if (size == 0) return -1;
+    if (size == 1 && isdigit(file)) return (int) *file;
+    int idx = block_contains(file, '&');
+    if (idx >= 0 && size==2) return atoi(file+idx+1);
+
+    int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;  // 0644
+    int fd = open(file, O_RDWR | O_CREAT, mode);
+    if (fd == -1) {
+        perr("ERROR: open failed with file %s in function openRedirFd()", file);
+    }
+    return fd;
+}
+//------------------------------------------------------------------------------
+// RUN REDIR
+//------------------------------------------------------------------------------
+void runRedir(struct cmd* cmd) {
+    struct execcmd* execcmd = (struct execcmd*) cmd;
+
+    int fdIn = openRedirFd(execcmd->in_file);
+    int fdOut = openRedirFd(execcmd->out_file);
+    int fdErr = openRedirFd(execcmd->err_file);
+
+    int redirIn = redir(fdIn, STDIN_FILENO);
+    int redirOut = redir(fdOut, STDOUT_FILENO);
+    int redirErr = redir(fdErr, STDERR_FILENO);
+
+    if (redirIn == -1 || redirOut == -1 || redirErr == -1) exitNicely("exit");
+    cmd->type = EXEC;
+    exec_cmd(cmd);
 }
 //------------------------------------------------------------------------------

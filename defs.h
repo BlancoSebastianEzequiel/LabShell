@@ -27,7 +27,7 @@
 #define BUFLEN 1024
 #define PRMTLEN 1024
 #define MAXARGS 20
-#define ARGSIZE 100
+#define ARGSIZE 1024
 #define FNAMESIZE 200
 
 // Command representation after parsed
