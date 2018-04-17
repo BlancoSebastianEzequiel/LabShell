@@ -14,7 +14,7 @@ for case in $(ls $ROOT); do
     if [[ $extension != 'c'  &&  $extension != 'h' ]]; then
         continue
     fi
-    
+
     string="# $case"
     echo $string >> code.md
     echo '```' >> code.md
