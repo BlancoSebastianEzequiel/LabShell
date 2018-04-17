@@ -85,8 +85,7 @@ void exec_cmd(struct cmd* cmd) {
 		
 		case PIPE: {
 			// pipes two commands
-			//
-			// Your code here
+			runPipe(cmd); // Your code here
 			printf("Pipes are not yet implemented\n");
 				
 			// free the memory allocated

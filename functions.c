@@ -209,3 +209,29 @@ void runRedir(struct cmd* cmd) {
     exec_cmd(cmd);
 }
 //------------------------------------------------------------------------------
+// RUN PIPE
+//------------------------------------------------------------------------------
+void runPipe(struct cmd* cmd) {
+    int pipeFd[2];
+    if (pipe(pipeFd) == -1) perr("ERROR: pipe() failed in function runPipe()");
+    // if (redir(pipeFd[0], pipeFd[1]) == -1) perr("ERROR redir failed");
+    struct pipecmd* pipecmd = (struct pipecmd*) cmd;
+
+    int status = 0;
+
+    pid_t p = fork();
+    if (p == -1) perr("ERROR fork failed in function runPipe()");
+    if (p == 0) {
+        // child process
+        close(pipeFd[0]); // Close unused write end
+        if (redir(pipeFd[1], STDOUT_FILENO) == -1) perr("ERROR redir failed");
+        exec_cmd(pipecmd->leftcmd);
+    } else {
+        // parent process
+        waitpid(p, &status, 0);
+        close(pipeFd[1]); // Close unused read end
+        if (redir(pipeFd[0], STDIN_FILENO) == -1) perr("ERROR redir failed");
+        exec_cmd(pipecmd->rightcmd);
+    }
+}
+//------------------------------------------------------------------------------
