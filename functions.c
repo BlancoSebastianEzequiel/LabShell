@@ -93,7 +93,7 @@ static int saveCommand(char** command, char* left) {
 //------------------------------------------------------------------------------
 // RUN PIPE
 //------------------------------------------------------------------------------
-static void runPipe(struct cmd* left, struct cmd* right) {
+static void runPipe(struct cmd* left, struct cmd* right, int last) {
     int pipeFd[2];
     if (pipe(pipeFd) == -1) perr("ERROR: pipe() failed in function runPipe()");
     // if (redir(pipeFd[0], pipeFd[1]) == -1) perr("ERROR redir failed");
@@ -112,7 +112,7 @@ static void runPipe(struct cmd* left, struct cmd* right) {
         waitpid(p, &status, 0);
         close(pipeFd[1]); // Close unused read end
         if (redir(pipeFd[0], STDIN_FILENO) == -1) perr("ERROR redir failed");
-        exec_cmd(right);
+        if (last) exec_cmd(right);
     }
 }
 //******************************************************************************
@@ -270,8 +270,10 @@ void runRedir(struct cmd* cmd) {
 //------------------------------------------------------------------------------
 void runMultiplePipe(struct cmd* cmd) {
     struct pipecmd* pipecmd = (struct pipecmd*) cmd;
+    int last = false;
     for (size_t i = 0; i < pipecmd->size-1; ++i) {
-        runPipe(pipecmd->cmdVec[i], pipecmd->cmdVec[i+1]);
+        if (i == pipecmd->size-2) last = true;
+        runPipe(pipecmd->cmdVec[i], pipecmd->cmdVec[i+1], last);
     }
 }
 //------------------------------------------------------------------------------
