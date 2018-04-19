@@ -154,7 +154,7 @@ static struct cmd* parse_back(char* buf_cmd) {
 
 // parses a command and checks if it contains
 // the '&' (background process) character
-static struct cmd* parse_cmd(char* buf_cmd) {
+struct cmd* parse_cmd(char* buf_cmd) {
 
 	if (strlen(buf_cmd) == 0)
 		return NULL;
@@ -174,14 +174,6 @@ static struct cmd* parse_cmd(char* buf_cmd) {
 // parses the command line
 // looking for the pipe character '|'
 struct cmd* parse_line(char* buf) {
-	
-	struct cmd *r, *l;
-
-	char* right = split_line(buf, '|');
-
-	l = parse_cmd(buf);
-	r = parse_cmd(right);
-	
-	return pipe_cmd_create(l, r);
+	return createCommands(buf);
 }
 

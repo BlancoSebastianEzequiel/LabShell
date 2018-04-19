@@ -10,18 +10,15 @@ void free_command(struct cmd* cmd) {
 	struct backcmd* b;
 
 	if (cmd->type == PIPE) {
-		
 		p = (struct pipecmd*)cmd;
-		
-		free_command(p->leftcmd);
-		free_command(p->rightcmd);
-		
+		for (size_t i = 0; i < p->size; ++i) free_command(p->cmdVec[i]);
+		free(p->cmdVec);
 		free(p);
 		return;
 	}
 
 	if (cmd->type == BACK) {
-		
+
 		b = (struct backcmd*)cmd;
 
 		free_command(b->c);

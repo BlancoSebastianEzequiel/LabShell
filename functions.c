@@ -9,6 +9,7 @@
 #include "printstatus.h"
 #include <ctype.h>
 #include <stdlib.h>
+#include "parsing.h"
 //******************************************************************************
 // INICIO FUNCIONES ESTATICAS
 //******************************************************************************
@@ -75,6 +76,44 @@ char* getWorkingDirectory() {
         i++;
     }
     return directory;
+}
+//------------------------------------------------------------------------------
+// SAVE COMMAND
+//------------------------------------------------------------------------------
+static int saveCommand(char** command, char* left) {
+    size_t size = strlen(left);
+    *command = (char*) malloc(sizeof(char) * (size + 1));
+    if (!*command) {
+        printf("ERROR: command = malloc() failed");
+        return 1;
+    }
+    strncpy(*command, left, size+1);
+    return 0;
+}
+//------------------------------------------------------------------------------
+// RUN PIPE
+//------------------------------------------------------------------------------
+static void runPipe(struct cmd* left, struct cmd* right) {
+    int pipeFd[2];
+    if (pipe(pipeFd) == -1) perr("ERROR: pipe() failed in function runPipe()");
+    // if (redir(pipeFd[0], pipeFd[1]) == -1) perr("ERROR redir failed");
+
+    int status = 0;
+
+    pid_t p = fork();
+    if (p == -1) perr("ERROR fork failed in function runPipe()");
+    if (p == 0) {
+        // child process
+        close(pipeFd[0]); // Close unused write end
+        if (redir(pipeFd[1], STDOUT_FILENO) == -1) perr("ERROR redir failed");
+        exec_cmd(left);
+    } else {
+        // parent process
+        waitpid(p, &status, 0);
+        close(pipeFd[1]); // Close unused read end
+        if (redir(pipeFd[0], STDIN_FILENO) == -1) perr("ERROR redir failed");
+        exec_cmd(right);
+    }
 }
 //******************************************************************************
 // FIN FUNCIONES ESTATICAS
@@ -227,29 +266,12 @@ void runRedir(struct cmd* cmd) {
     exec_cmd(cmd);
 }
 //------------------------------------------------------------------------------
-// RUN PIPE
+// RUN MULTIPLE PIPE
 //------------------------------------------------------------------------------
-void runPipe(struct cmd* cmd) {
-    int pipeFd[2];
-    if (pipe(pipeFd) == -1) perr("ERROR: pipe() failed in function runPipe()");
-    // if (redir(pipeFd[0], pipeFd[1]) == -1) perr("ERROR redir failed");
+void runMultiplePipe(struct cmd* cmd) {
     struct pipecmd* pipecmd = (struct pipecmd*) cmd;
-
-    int status = 0;
-
-    pid_t p = fork();
-    if (p == -1) perr("ERROR fork failed in function runPipe()");
-    if (p == 0) {
-        // child process
-        close(pipeFd[0]); // Close unused write end
-        if (redir(pipeFd[1], STDOUT_FILENO) == -1) perr("ERROR redir failed");
-        exec_cmd(pipecmd->leftcmd);
-    } else {
-        // parent process
-        waitpid(p, &status, 0);
-        close(pipeFd[1]); // Close unused read end
-        if (redir(pipeFd[0], STDIN_FILENO) == -1) perr("ERROR redir failed");
-        exec_cmd(pipecmd->rightcmd);
+    for (size_t i = 0; i < pipecmd->size-1; ++i) {
+        runPipe(pipecmd->cmdVec[i], pipecmd->cmdVec[i+1]);
     }
 }
 //------------------------------------------------------------------------------
@@ -272,5 +294,76 @@ int parsing(struct execcmd* c, char* arg) {
         return true;
     }
     return false;
+}
+//------------------------------------------------------------------------------
+// GET SIZE
+//------------------------------------------------------------------------------
+int getSize(char* cmd, char* commands[], int (*f)(char**, char*)) {
+    int i = 0;
+    char* aux = (char*) malloc(sizeof(char) * (strlen(cmd) + 1));
+    strcpy(aux, cmd);
+    char* left = aux;
+    char* right;
+    while (block_contains(left, '|') >= 0) {
+        right = split_line(left, '|');
+        if (f) f(&commands[i], left);
+        left = right;
+        i++;
+    }
+    if (f) f(&commands[i], left);
+    free(aux);
+    return ++i;
+}
+//------------------------------------------------------------------------------
+// PRINT COMMAND
+//------------------------------------------------------------------------------
+int printCommand(char* commands[], size_t size) {
+    printf("{ ");
+    for (size_t j = 0; j < size; ++j) {
+        if (j == size-1) printf("%s", commands[j]);
+        else printf("%s, ", commands[j]);
+    }
+    printf(" }\n");
+    return 0;
+}
+//------------------------------------------------------------------------------
+// FREE COMMAND
+//------------------------------------------------------------------------------
+int freeCommand(char* commands[], size_t size) {
+    for (size_t j = 0; j < size; ++j) free(commands[j]);
+    free(commands);
+    return 0;
+}
+//------------------------------------------------------------------------------
+// GET COMMANDS
+//------------------------------------------------------------------------------
+char** getCommands(char* cmd, size_t* size) {
+    *size = getSize(cmd, NULL, NULL);
+    char** commands = (char**) malloc(sizeof(char*) * (*size + 1));
+    if (!commands) {
+        perr("ERROR: commands = malloc() failed");
+        return NULL;
+    }
+    commands[*size] = NULL;
+    getSize(cmd, commands, saveCommand);
+    return commands;
+}
+//------------------------------------------------------------------------------
+// CREATE COMMANDS
+//------------------------------------------------------------------------------
+struct cmd* createCommands(char* cmd) {
+    size_t size;
+    char** commands = getCommands(cmd, &size);
+    size_t posSize = sizeof(struct cmd*);
+    struct cmd** cmdVec = (struct cmd**) malloc(posSize*(size+1));
+    if (!cmdVec) {
+        perr("ERROR: cmdVec = malloc() failed");
+        freeCommand(commands, size);
+        return NULL;
+    }
+    for (size_t i = 0; i < size; ++i) cmdVec[i] = parse_cmd(commands[i]);
+    freeCommand(commands, size);
+    cmdVec[size] = NULL;
+    return pipe_cmd_create(cmdVec, size);
 }
 //------------------------------------------------------------------------------

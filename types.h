@@ -63,8 +63,8 @@ struct pipecmd {
 	int type;
 	pid_t pid;
 	char scmd[BUFLEN];
-	struct cmd* leftcmd;
-	struct cmd* rightcmd;
+	struct cmd** cmdVec;
+	size_t size;
 };
 
 /*

@@ -30,18 +30,21 @@ struct cmd* back_cmd_create(struct cmd* c) {
 }
 
 // encapsulates two commands into one pipe struct
-struct cmd* pipe_cmd_create(struct cmd* left, struct cmd* right) {
+struct cmd* pipe_cmd_create(struct cmd** cmdVec, size_t size) {
 
-	if (!right)
-		return left;
+	if (size == 1) {
+		struct cmd* cmd = cmdVec[0];
+		free(cmdVec);
+		return cmd;
+	}
 	
 	struct pipecmd* p;
 
 	p = (struct pipecmd*)calloc(sizeof(*p), sizeof(*p));
 	
 	p->type = PIPE;
-	p->leftcmd = left;
-	p->rightcmd = right;
+	p->cmdVec = cmdVec;
+	p->size = size;
 	
 	return (struct cmd*)p;
 }
