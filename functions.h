@@ -27,6 +27,13 @@ int printWorkingDirectory(char* cmd);
 //------------------------------------------------------------------------------
 // SET ENVIRONMENT VARIABLES
 //------------------------------------------------------------------------------
+// sets the environment variables passed
+// in the command line
+//
+// Hints:
+// - use 'block_contains()' to
+// 	get the index where the '=' is
+// - 'get_environ_*()' can be useful here
 void setEnvironmentVariables(char** eargv, int eargc);
 //------------------------------------------------------------------------------
 // RUN BACKGROUND
@@ -39,6 +46,16 @@ int execBackground(struct cmd* cmd);
 //------------------------------------------------------------------------------
 // OPEN REDIR FD
 //------------------------------------------------------------------------------
+// opens the file in which the stdin/stdout or
+// stderr flow will be redirected, and returns
+// the file descriptor
+//
+// Find out what permissions it needs.
+// Does it have to be closed after the execve(2) call?
+//
+// Hints:
+// - if O_CREAT is used, add S_IWUSR and S_IRUSR
+// 	to make it a readable normal file
 int openRedirFd(char* file);
 //------------------------------------------------------------------------------
 // RUN REDIR

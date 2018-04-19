@@ -35,6 +35,8 @@ static int findFirstCaracterAfterSpace(const char* str, int offset) {
 //------------------------------------------------------------------------------
 // GET ENVIRONMENT VALUE
 //------------------------------------------------------------------------------
+// sets the "value" argument with the value part of
+// the "arg" argument and null-terminates it
 static void getEnvironmentValue(char* arg, char* value, int idx) {
     int i, j;
     for (i = (idx + 1), j = 0; i < strlen(arg); i++, j++) value[j] = arg[i];
@@ -43,6 +45,8 @@ static void getEnvironmentValue(char* arg, char* value, int idx) {
 //------------------------------------------------------------------------------
 // GET ENVIRONMENT KEY
 //------------------------------------------------------------------------------
+// sets the "key" argument with the key part of
+// the "arg" argument and null-terminates it
 static void getEnvironmentKey(char* arg, char* key) {
     int i;
     for (i = 0; arg[i] != '='; i++) key[i] = arg[i];
@@ -56,6 +60,21 @@ static int redir(int oldFd, int newFd) {
     int fd = dup2(oldFd, newFd);
     if (fd == -1) perr("ERROR: dup2(%d, %d) filed", oldFd, newFd);
     return fd;
+}
+//------------------------------------------------------------------------------
+// PWD
+//------------------------------------------------------------------------------
+char* getWorkingDirectory() {
+    char* directory = (char*) malloc(sizeof(char)* PATH_MAX);
+    getcwd(directory, PATH_MAX);
+    size_t i = 1;
+    while (directory == NULL) {
+        free(directory);
+        directory = (char*) malloc(sizeof(char)* PATH_MAX*i);
+        getcwd(directory, PATH_MAX);
+        i++;
+    }
+    return directory;
 }
 //******************************************************************************
 // FIN FUNCIONES ESTATICAS
@@ -121,15 +140,7 @@ int exitNicely(char* cmd) {
 //------------------------------------------------------------------------------
 int printWorkingDirectory(char* cmd) {
     if (!isEqualToInNBytes(cmd, "pwd", 3)) return false;
-    char* directory = (char*) malloc(sizeof(char)* PATH_MAX);
-    getcwd(directory, PATH_MAX);
-    size_t i = 1;
-    while (directory == NULL) {
-        free(directory);
-        directory = (char*) malloc(sizeof(char)* PATH_MAX*i);
-        getcwd(directory, PATH_MAX);
-        i++;
-    }
+    char* directory = getWorkingDirectory();
     printf("%s\n", directory);
     free(directory);
     return true;
