@@ -135,7 +135,10 @@ void execCommand(struct cmd* cmd) {
 char* expandEnvironmentVariables(char* arg) {
     if (arg[0] != '$') return arg;
     char* value = getenv(arg+1);
-    if (value == NULL) return arg;
+    if (value == NULL) {
+        strcpy(arg, " ");
+        return arg;
+    }
     size_t sizeArg = strlen(arg);
     size_t sizeValue = strlen(value);
     if (sizeValue > sizeArg) {
