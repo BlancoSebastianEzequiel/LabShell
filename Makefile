@@ -1,26 +1,31 @@
 CFLAGS := -std=c99 -g -Wall
 CC := gcc
-BIN := $(filter-out sh.c, $(wildcard *.c))
-BINFILES := $(BIN:.c=.o)
+EXEC = sh
+BIN = $(filter-out $(EXEC).c, $(wildcard *.c))
+BINFILES = $(BIN:.c=.o)
+OBJDIR = build
 
-all: sh
+$(OBJDIR)/%.o: %.c %.h
+	@mkdir -p $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 
-%.o: %.c %.h
-	$(CC) $(CFLAGS) -c $<
+OBJEXEC = $(addprefix $(OBJDIR)/, $(EXEC))
 
-sh: $(BINFILES) sh.c
+all: $(OBJEXEC)
+
+$(OBJEXEC): $(addprefix $(OBJDIR)/, $(BINFILES)) $(EXEC).c
 	$(CC) $(CFLAGS) $^ -o $@
 
 run: all
-	./sh
+	./$(OBJDIR)/$(EXEC)
 
 valgrind: all
-	valgrind --leak-check=full --show-leak-kinds=all ./sh
-
-clean:
-	rm -f sh *.o *.asm
+	valgrind --leak-check=full --show-leak-kinds=all ./$(OBJDIR)/$(EXEC)
 
 code:
 	./code.sh
+
+clean:
+	rm -rf $(OBJDIR)/ *.o *.asm
 
 .PHONY: clean run
