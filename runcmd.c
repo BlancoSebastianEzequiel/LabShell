@@ -2,7 +2,7 @@
 #include "functions.h"
 int status = 0;
 struct cmd* parsed_pipe;
-
+char backgroundMsg[256];
 // runs the command in 'cmd'
 int run_cmd(char* cmd) {
 	
@@ -28,6 +28,8 @@ int run_cmd(char* cmd) {
 
 	// parses the command line
 	parsed = parse_line(cmd);
+	struct execcmd* execcmd = (struct execcmd*) parsed;
+	setEnvironmentVariables(execcmd->eargv, execcmd->eargc);
 	
 	// forks and run the command
 	if ((p = fork()) == 0) {
@@ -40,23 +42,25 @@ int run_cmd(char* cmd) {
 
 		exec_cmd(parsed);
 	}
-
 	// store the pid of the process
 	parsed->pid = p;
 
 	// background process special treatment
 	// Hint:
-	// - check if the process is 
+	// - check if the process is
 	// 	going to be run in the 'back'
-	// - print info about it with 
+	// - print info about it with
 	// 	'print_back_info()'
 	//
 	// Your code here
 	// waits for the process to finish
-	if (!execBackground(parsed)) waitpid(p, &status, 0);
-	
+	if (!execBackground(parsed, p)) {
+		waitpid(p, &status, 0);
+		printf("%s\n", backgroundMsg);
+		backgroundMsg[0] = END_STRING;
+	}
+
 	print_status_info(parsed);
-	
 	free_command(parsed);
 
 	return 0;

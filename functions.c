@@ -1,15 +1,26 @@
+#define _BSD_SOURCE || _POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600
+#define _POSIX_SOURCE
+#define _XOPEN_SOURCE 700
 #include "functions.h"
 #include "utils.h"
 #include "general.h"
+#include "printstatus.h"
+#include "parsing.h"
+#include "exec.h"
+
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <pwd.h>
-#include "exec.h"
-#include "printstatus.h"
 #include <ctype.h>
 #include <stdlib.h>
-#include "parsing.h"
+#include <signal.h>
+//------------------------------------------------------------------------------
+// EXTERNAL VARIABLE
+//------------------------------------------------------------------------------
+extern int status;
+char scmd[256];
+pid_t lastBackPid;
 //******************************************************************************
 // INICIO FUNCIONES ESTATICAS
 //******************************************************************************
@@ -115,25 +126,46 @@ static void runPipe(struct cmd* left, struct cmd* right, int last) {
         if (last) exec_cmd(right);
     }
 }
+//------------------------------------------------------------------------------
+// HANDLER
+//------------------------------------------------------------------------------
+static void handler(int signum, siginfo_t* info, void* context) {
+    if (info->si_pid != lastBackPid) return;
+    if (lastBackPid == 0 || scmd[0] == END_STRING) return;
+    pid_t p = lastBackPid;
+    char* f = scmd;
+    getMessage(backgroundMsg, 256, "==> terminado: PID=%d (%s)\n", p, f);
+    lastBackPid = 0;
+    scmd[0] = END_STRING;
+}
 //******************************************************************************
 // FIN FUNCIONES ESTATICAS
 //******************************************************************************
 //------------------------------------------------------------------------------
 // EXEC COMMAND
 //------------------------------------------------------------------------------
-void execCommand(struct cmd* cmd) {
+int execCommand(struct cmd* cmd) {
     struct execcmd* execcmd = (struct execcmd*) cmd;
-    if (execcmd->argc == 0) return;
+    if (execcmd->argc == 0) return false;
     const char* file = (const char*) execcmd->argv[0];
     if (execvp(file, execcmd->argv) == -1) {
         perr("ERROR function execvp() returned -1");
+        return false;
     }
+    return true;
 }
 //------------------------------------------------------------------------------
 // EXPAND ENVIRONMENT VARIABLES
 //------------------------------------------------------------------------------
 char* expandEnvironmentVariables(char* arg) {
     if (arg[0] != '$') return arg;
+
+    if (strcmp(arg+1, "?") == 0) {  // Challenge Pseudo-variables
+        snprintf(arg, strlen(arg), "%d", status);
+        arg[1] = END_STRING;
+        return arg;
+    }
+
     char* value = getenv(arg+1);
     if (value == NULL) {
         strcpy(arg, " ");
@@ -221,10 +253,28 @@ void runBackground(struct cmd* cmd) {
 //------------------------------------------------------------------------------
 // EXEC BACKGROUND
 //------------------------------------------------------------------------------
-int execBackground(struct cmd* cmd) {
+int execBackground(struct cmd* cmd, pid_t pidChild) {
     if (cmd->type != BACK) return false;
+    lastBackPid = pidChild;
+    size_t size = strlen(cmd->scmd);
+    strncpy(scmd, cmd->scmd, size);
     print_back_info(cmd);
     return true;
+}
+//------------------------------------------------------------------------------
+// SEND ACTION SIGNAL
+//------------------------------------------------------------------------------
+int sendActionSignal() {
+    struct sigaction act;
+    // act.sa_handler = handler;
+    act.sa_sigaction = handler;
+    act.sa_flags = SA_RESTART;
+    // act.sa_flags = SA_SIGINFO;
+    if (sigaction(SIGCHLD, &act, NULL) == -1) {
+        perr("ERROR: sigaction() failed in function sendActionSignal");
+        return 1;
+    }
+    return 0;
 }
 //------------------------------------------------------------------------------
 // OPEN REDIR FD

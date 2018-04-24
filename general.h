@@ -14,4 +14,10 @@
 // correspondiente a la variable errno
 void perr(const char *format, ...);
 //------------------------------------------------------------------------------
+// GET MESSAGE
+//------------------------------------------------------------------------------
+// Pre: Recibo un buffer, su tamaño, un formato y los argumentos
+// Pos: Escribo el mensaje por en el buffer
+void getMessage(char* buffer, size_t size, const char *format, ...);
+//------------------------------------------------------------------------------
 #endif // GENERAL_H

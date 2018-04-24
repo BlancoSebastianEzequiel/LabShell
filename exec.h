@@ -7,6 +7,7 @@
 #include "freecmd.h"
 
 extern struct cmd* parsed_pipe;
+extern char backgroundMsg[256];
 
 void exec_cmd(struct cmd* c);
 

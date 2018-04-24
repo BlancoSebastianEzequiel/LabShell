@@ -118,13 +118,13 @@ static struct cmd* parse_exec(char* buf_cmd) {
 		if (buf_cmd[idx] != END_STRING)
 			idx++;
 		
-		tok = expand_environ_var(tok);
-		
 		if (parse_redir_flow(c, tok))
 			continue;
 		
 		if (parse_environ_var(c, tok))
 			continue;
+
+		tok = expand_environ_var(tok);
 		
 		c->argv[argc++] = tok;
 	}

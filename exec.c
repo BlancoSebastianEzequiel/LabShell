@@ -11,9 +11,10 @@ void exec_cmd(struct cmd* cmd) {
 
 		case EXEC: {
 			// spawns a command
-			struct execcmd* execcmd = (struct execcmd*) cmd;
-			setEnvironmentVariables(execcmd->eargv, execcmd->eargc);
-			execCommand(cmd); // Your code here
+			if (!execCommand(cmd)) { // Your code here
+				free_command(cmd);
+				exit(0);
+			}
 			printf("Commands are not yet implemented\n");
 			_exit(-1);
 			break;
