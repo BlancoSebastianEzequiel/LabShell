@@ -18,7 +18,6 @@
 //------------------------------------------------------------------------------
 // EXTERNAL VARIABLE
 //------------------------------------------------------------------------------
-extern int status;
 char scmd[256];
 pid_t lastBackPid;
 //******************************************************************************
@@ -197,6 +196,9 @@ int changeDirectory(char* cmd) {
     } else {
         value = chdir(cmd+idx);
     }
+    char* directory = getWorkingDirectory();
+    strncpy(promt, directory, strlen(directory));
+    free(directory);
     if (value == -1) perr("ERROR function chdir() failed");
     return true;
 }
