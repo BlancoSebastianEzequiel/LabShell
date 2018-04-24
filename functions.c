@@ -20,6 +20,9 @@
 //------------------------------------------------------------------------------
 char scmd[256];
 pid_t lastBackPid;
+pid_t pidBack[MAX_BACK];
+char* scmdBack[MAX_BACK];
+size_t pos = 0;
 //******************************************************************************
 // INICIO FUNCIONES ESTATICAS
 //******************************************************************************
@@ -129,13 +132,22 @@ static void runPipe(struct cmd* left, struct cmd* right, int last) {
 // HANDLER
 //------------------------------------------------------------------------------
 static void handler(int signum, siginfo_t* info, void* context) {
-    if (info->si_pid != lastBackPid) return;
-    if (lastBackPid == 0 || scmd[0] == END_STRING) return;
-    pid_t p = lastBackPid;
-    char* f = scmd;
+    pid_t p;
+    char* f;
+    int position;
+    int found = false;
+    for (size_t i = 0; i < MAX_BACK; ++i) {
+        if (info->si_pid != pidBack[i]) continue;
+        p = pidBack[i];
+        f = scmdBack[i];
+        position = i;
+        found = true;
+        break;
+    }
+    if (!found) return;
     getMessage(backgroundMsg, 256, "==> terminado: PID=%d (%s)\n", p, f);
-    lastBackPid = 0;
-    scmd[0] = END_STRING;
+    pidBack[position] = -1;
+    free(scmdBack[position]);
 }
 //******************************************************************************
 // FIN FUNCIONES ESTATICAS
@@ -257,9 +269,11 @@ void runBackground(struct cmd* cmd) {
 //------------------------------------------------------------------------------
 int execBackground(struct cmd* cmd, pid_t pidChild) {
     if (cmd->type != BACK) return false;
-    lastBackPid = pidChild;
+    pidBack[pos] = pidChild;
     size_t size = strlen(cmd->scmd);
-    strncpy(scmd, cmd->scmd, size);
+    scmdBack[pos] = (char*) malloc(sizeof(char) * (size+1));
+    strncpy(scmdBack[pos], cmd->scmd, size+1);
+    pos++;
     print_back_info(cmd);
     return true;
 }
