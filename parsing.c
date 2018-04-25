@@ -1,5 +1,6 @@
 #include "parsing.h"
 #include "functions.h"
+#include "general.h"
 //------------------------------------------------------------------------------
 // GET TOKEN
 //------------------------------------------------------------------------------
@@ -226,6 +227,78 @@ struct cmd* parse_cmd(char* buf_cmd) {
 		return parse_back(buf_cmd);
 		
 	return parse_exec(buf_cmd);
+}
+//------------------------------------------------------------------------------
+// GET SIZE
+//------------------------------------------------------------------------------
+static int getSize(char* cmd, char* commands[], int (*f)(char**, char*)) {
+	int i = 0;
+	char* aux = (char*) malloc(sizeof(char) * (strlen(cmd) + 1));
+	strcpy(aux, cmd);
+	char* left = aux;
+	char* right;
+	while (block_contains(left, '|') >= 0) {
+		right = split_line(left, '|');
+		if (f) f(&commands[i], left);
+		left = right;
+		i++;
+	}
+	if (f) f(&commands[i], left);
+	free(aux);
+	return ++i;
+}
+//------------------------------------------------------------------------------
+// FREE COMMAND
+//------------------------------------------------------------------------------
+static int freeCommand(char* commands[], size_t size) {
+	for (size_t j = 0; j < size; ++j) free(commands[j]);
+	free(commands);
+	return 0;
+}
+//------------------------------------------------------------------------------
+// SAVE COMMAND
+//------------------------------------------------------------------------------
+static int saveCommand(char** command, char* left) {
+	size_t size = strlen(left);
+	*command = (char*) malloc(sizeof(char) * (size + 1));
+	if (!*command) {
+		printf("ERROR: command = malloc() failed");
+		return 1;
+	}
+	strncpy(*command, left, size+1);
+	return 0;
+}
+//------------------------------------------------------------------------------
+// GET COMMANDS
+//------------------------------------------------------------------------------
+static char** getCommands(char* cmd, size_t* size) {
+	*size = getSize(cmd, NULL, NULL);
+	char** commands = (char**) malloc(sizeof(char*) * (*size + 1));
+	if (!commands) {
+		perr("ERROR: commands = malloc() failed");
+		return NULL;
+	}
+	commands[*size] = NULL;
+	getSize(cmd, commands, saveCommand);
+	return commands;
+}
+//------------------------------------------------------------------------------
+// CREATE COMMANDS
+//------------------------------------------------------------------------------
+static struct cmd* createCommands(char* cmd) {
+	size_t size;
+	char** commands = getCommands(cmd, &size);
+	size_t posSize = sizeof(struct cmd*);
+	struct cmd** cmdVec = (struct cmd**) malloc(posSize*(size+1));
+	if (!cmdVec) {
+		perr("ERROR: cmdVec = malloc() failed");
+		freeCommand(commands, size);
+		return NULL;
+	}
+	for (size_t i = 0; i < size; ++i) cmdVec[i] = parse_cmd(commands[i]);
+	freeCommand(commands, size);
+	cmdVec[size] = NULL;
+	return pipe_cmd_create(cmdVec, size);
 }
 //------------------------------------------------------------------------------
 // PARSE LINE
