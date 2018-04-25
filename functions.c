@@ -131,37 +131,6 @@ int execCommand(struct cmd* cmd) {
     return true;
 }
 //------------------------------------------------------------------------------
-// EXPAND ENVIRONMENT VARIABLES
-//------------------------------------------------------------------------------
-char* expandEnvironmentVariables(char* arg) {
-    if (arg[0] != '$') return arg;
-
-    if (strcmp(arg+1, "?") == 0) {  // Challenge Pseudo-variables
-        snprintf(arg, strlen(arg), "%d", status);
-        arg[1] = END_STRING;
-        return arg;
-    }
-
-    char* value = getenv(arg+1);
-    if (value == NULL) {
-        strcpy(arg, " ");
-        return arg;
-    }
-    size_t sizeArg = strlen(arg);
-    size_t sizeValue = strlen(value);
-    if (sizeValue > sizeArg) {
-        char* expansion = (char*) malloc(sizeof(char)*(sizeValue + 1));
-        free(arg);
-        strncpy(expansion, value, sizeValue);
-        expansion[sizeValue] = END_STRING;
-        return expansion;
-    } else {
-        strncpy(arg, value, sizeValue);
-        arg[sizeValue] = END_STRING;
-        return arg;
-    }
-}
-//------------------------------------------------------------------------------
 // SET ENVIRONMENT VARIABLES
 //------------------------------------------------------------------------------
 void setEnvironmentVariables(char** eargv, int eargc) {

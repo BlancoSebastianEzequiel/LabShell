@@ -1,5 +1,8 @@
 #include "parsing.h"
 #include "functions.h"
+//------------------------------------------------------------------------------
+// GET TOKEN
+//------------------------------------------------------------------------------
 // parses an argument of the command stream input
 static char* get_token(char* buf, int idx) {
 
@@ -16,7 +19,9 @@ static char* get_token(char* buf, int idx) {
 
 	return tok;
 }
-
+//------------------------------------------------------------------------------
+// PARSE REDIR FLOW
+//------------------------------------------------------------------------------
 // parses and changes stdin/out/err if needed
 static bool parse_redir_flow(struct execcmd* c, char* arg) {
 
@@ -57,7 +62,9 @@ static bool parse_redir_flow(struct execcmd* c, char* arg) {
 	
 	return false;
 }
-
+//------------------------------------------------------------------------------
+// PARSE ENVIRON VAR
+//------------------------------------------------------------------------------
 // parses and sets a pair KEY=VALUE
 // environment variable
 static bool parse_environ_var(struct execcmd* c, char* arg) {
@@ -82,7 +89,9 @@ static bool parse_environ_var(struct execcmd* c, char* arg) {
 	
 	return false;
 }
-
+//------------------------------------------------------------------------------
+// EXPAND ENVIRONMENT VARIABLES
+//------------------------------------------------------------------------------
 // this function will be called for every token, and it should
 // expand environment variables. In other words, if the token
 // happens to start with '$', the correct substitution with the
@@ -95,9 +104,37 @@ static bool parse_environ_var(struct execcmd* c, char* arg) {
 // - expand it and copy the value
 // 	 to 'arg' 
 static char* expand_environ_var(char* arg) {
-	return expandEnvironmentVariables(arg);  // Your code here
-}
+	// Your code here
+	if (arg[0] != '$') return arg;
 
+	if (strcmp(arg+1, "?") == 0) {  // Challenge Pseudo-variables
+		snprintf(arg, strlen(arg), "%d", status);
+		arg[1] = END_STRING;
+		return arg;
+	}
+
+	char* value = getenv(arg+1);
+	if (value == NULL) {
+		strcpy(arg, " ");
+		return arg;
+	}
+	size_t sizeArg = strlen(arg);
+	size_t sizeValue = strlen(value);
+	if (sizeValue > sizeArg) {
+		char* expansion = (char*) malloc(sizeof(char)*(sizeValue + 1));
+		free(arg);
+		strncpy(expansion, value, sizeValue);
+		expansion[sizeValue] = END_STRING;
+		return expansion;
+	} else {
+		strncpy(arg, value, sizeValue);
+		arg[sizeValue] = END_STRING;
+		return arg;
+	}
+}
+//------------------------------------------------------------------------------
+// PARSE EXEC
+//------------------------------------------------------------------------------
 // parses one single command having into account:
 // - the arguments passed to the program
 // - stdin/stdout/stderr flow changes
@@ -134,7 +171,9 @@ static struct cmd* parse_exec(char* buf_cmd) {
 	
 	return (struct cmd*)c;
 }
-
+//------------------------------------------------------------------------------
+// PARSE BACK
+//------------------------------------------------------------------------------
 // parses a command knowing that it contains
 // the '&' char
 static struct cmd* parse_back(char* buf_cmd) {
@@ -151,7 +190,9 @@ static struct cmd* parse_back(char* buf_cmd) {
 
 	return back_cmd_create(e);
 }
-
+//------------------------------------------------------------------------------
+// PARSE CMD
+//------------------------------------------------------------------------------
 // parses a command and checks if it contains
 // the '&' (background process) character
 struct cmd* parse_cmd(char* buf_cmd) {
@@ -170,10 +211,12 @@ struct cmd* parse_cmd(char* buf_cmd) {
 		
 	return parse_exec(buf_cmd);
 }
-
+//------------------------------------------------------------------------------
+// PARSE LINE
+//------------------------------------------------------------------------------
 // parses the command line
 // looking for the pipe character '|'
 struct cmd* parse_line(char* buf) {
 	return createCommands(buf);
 }
-
+//------------------------------------------------------------------------------
