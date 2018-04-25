@@ -17,17 +17,6 @@ extern int status;
 //------------------------------------------------------------------------------
 int execCommand(struct cmd* cmd);
 //------------------------------------------------------------------------------
-// SET ENVIRONMENT VARIABLES
-//------------------------------------------------------------------------------
-// sets the environment variables passed
-// in the command line
-//
-// Hints:
-// - use 'block_contains()' to
-// 	get the index where the '=' is
-// - 'get_environ_*()' can be useful here
-void setEnvironmentVariables(char** eargv, int eargc);
-//------------------------------------------------------------------------------
 // RUN BACKGROUND
 //------------------------------------------------------------------------------
 void runBackground(struct cmd* cmd);

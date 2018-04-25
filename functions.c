@@ -26,26 +26,6 @@ size_t posBack = 0;
 // INICIO FUNCIONES ESTATICAS
 //******************************************************************************
 //------------------------------------------------------------------------------
-// GET ENVIRONMENT VALUE
-//------------------------------------------------------------------------------
-// sets the "value" argument with the value part of
-// the "arg" argument and null-terminates it
-static void getEnvironmentValue(char* arg, char* value, int idx) {
-    int i, j;
-    for (i = (idx + 1), j = 0; i < strlen(arg); i++, j++) value[j] = arg[i];
-    value[j] = END_STRING;
-}
-//------------------------------------------------------------------------------
-// GET ENVIRONMENT KEY
-//------------------------------------------------------------------------------
-// sets the "key" argument with the key part of
-// the "arg" argument and null-terminates it
-static void getEnvironmentKey(char* arg, char* key) {
-    int i;
-    for (i = 0; arg[i] != '='; i++) key[i] = arg[i];
-    key[i] = END_STRING;
-}
-//------------------------------------------------------------------------------
 // REDIR
 //------------------------------------------------------------------------------
 static int redir(int oldFd, int newFd) {
@@ -121,7 +101,6 @@ static void handler(int signum, siginfo_t* info, void* context) {
 //------------------------------------------------------------------------------
 int execCommand(struct cmd* cmd) {
     struct execcmd* execcmd = (struct execcmd*) cmd;
-    setEnvironmentVariables(execcmd->eargv, execcmd->eargc);
     if (execcmd->argc == 0) return false;
     const char* file = (const char*) execcmd->argv[0];
     if (execvp(file, execcmd->argv) == -1) {
@@ -129,30 +108,6 @@ int execCommand(struct cmd* cmd) {
         return false;
     }
     return true;
-}
-//------------------------------------------------------------------------------
-// SET ENVIRONMENT VARIABLES
-//------------------------------------------------------------------------------
-void setEnvironmentVariables(char** eargv, int eargc) {
-    for (size_t i = 0; i < eargc; ++i) {
-        int idx = block_contains(eargv[i], '=');
-        if (idx == -1) continue;
-        size_t size = strlen(eargv[i]);
-        char* key = (char*) malloc(sizeof(char) * (idx + 1));
-        if (key == NULL) continue;
-        char* value = (char*) malloc(sizeof(char) * (size - idx));
-        if (key == NULL) {
-            free(key);
-            continue;
-        }
-        getEnvironmentKey(eargv[i], key);
-        getEnvironmentValue(eargv[i], value, idx);
-        if (setenv(key, value, 0) == -1) {
-            perr("ERROR: function setenv(%s, %s, 0) returned -1", key, value);
-        }
-        free(key);
-        free(value);
-    }
 }
 //------------------------------------------------------------------------------
 // RUN BACKGROUND
