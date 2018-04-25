@@ -22,80 +22,6 @@
 pid_t pidBack[MAX_BACK];
 char* scmdBack[MAX_BACK];
 size_t posBack = 0;
-//******************************************************************************
-// INICIO FUNCIONES ESTATICAS
-//******************************************************************************
-//------------------------------------------------------------------------------
-// REDIR
-//------------------------------------------------------------------------------
-static int redir(int oldFd, int newFd) {
-    if (newFd == -1 || oldFd == -1) return 0;
-    int fd = dup2(oldFd, newFd);
-    if (fd == -1) perr("ERROR: dup2(%d, %d) filed", oldFd, newFd);
-    return fd;
-}
-//------------------------------------------------------------------------------
-// SAVE COMMAND
-//------------------------------------------------------------------------------
-static int saveCommand(char** command, char* left) {
-    size_t size = strlen(left);
-    *command = (char*) malloc(sizeof(char) * (size + 1));
-    if (!*command) {
-        printf("ERROR: command = malloc() failed");
-        return 1;
-    }
-    strncpy(*command, left, size+1);
-    return 0;
-}
-//------------------------------------------------------------------------------
-// RUN PIPE
-//------------------------------------------------------------------------------
-static void runPipe(struct cmd* left, struct cmd* right, int last) {
-    int pipeFd[2];
-    if (pipe(pipeFd) == -1) perr("ERROR: pipe() failed in function runPipe()");
-    // if (redir(pipeFd[0], pipeFd[1]) == -1) perr("ERROR redir failed");
-
-    int status = 0;
-
-    pid_t p = fork();
-    if (p == -1) perr("ERROR fork failed in function runPipe()");
-    if (p == 0) {
-        // child process
-        close(pipeFd[0]); // Close unused write end
-        if (redir(pipeFd[1], STDOUT_FILENO) == -1) perr("ERROR redir failed");
-        exec_cmd(left);
-    } else {
-        // parent process
-        waitpid(p, &status, 0);
-        close(pipeFd[1]); // Close unused read end
-        if (redir(pipeFd[0], STDIN_FILENO) == -1) perr("ERROR redir failed");
-        if (last) exec_cmd(right);
-    }
-}
-//------------------------------------------------------------------------------
-// HANDLER
-//------------------------------------------------------------------------------
-static void handler(int signum, siginfo_t* info, void* context) {
-    pid_t p;
-    char* f;
-    int position;
-    int found = false;
-    for (size_t i = 0; i < MAX_BACK; ++i) {
-        if (info->si_pid != pidBack[i]) continue;
-        p = pidBack[i];
-        f = scmdBack[i];
-        position = i;
-        found = true;
-        break;
-    }
-    if (!found) return;
-    getMessage(backgroundMsg, 256, "==> terminado: PID=%d (%s)\n", p, f);
-    pidBack[position] = -1;
-    free(scmdBack[position]);
-}
-//******************************************************************************
-// FIN FUNCIONES ESTATICAS
-//******************************************************************************
 //------------------------------------------------------------------------------
 // EXEC COMMAND
 //------------------------------------------------------------------------------
@@ -128,6 +54,27 @@ int execBackground(struct cmd* cmd, pid_t pidChild) {
     posBack++;
     print_back_info(cmd);
     return true;
+}
+//------------------------------------------------------------------------------
+// HANDLER
+//------------------------------------------------------------------------------
+static void handler(int signum, siginfo_t* info, void* context) {
+    pid_t p;
+    char* f;
+    int position;
+    int found = false;
+    for (size_t i = 0; i < MAX_BACK; ++i) {
+        if (info->si_pid != pidBack[i]) continue;
+        p = pidBack[i];
+        f = scmdBack[i];
+        position = i;
+        found = true;
+        break;
+    }
+    if (!found) return;
+    getMessage(backgroundMsg, 256, "==> terminado: PID=%d (%s)\n", p, f);
+    pidBack[position] = -1;
+    free(scmdBack[position]);
 }
 //------------------------------------------------------------------------------
 // SEND ACTION SIGNAL
@@ -169,6 +116,15 @@ int openRedirFd(char* file) {
     return fd;
 }
 //------------------------------------------------------------------------------
+// REDIR
+//------------------------------------------------------------------------------
+static int redir(int oldFd, int newFd) {
+    if (newFd == -1 || oldFd == -1) return 0;
+    int fd = dup2(oldFd, newFd);
+    if (fd == -1) perr("ERROR: dup2(%d, %d) filed", oldFd, newFd);
+    return fd;
+}
+//------------------------------------------------------------------------------
 // RUN REDIR
 //------------------------------------------------------------------------------
 void runRedir(struct cmd* cmd) {
@@ -185,6 +141,31 @@ void runRedir(struct cmd* cmd) {
     if (redirIn == -1 || redirOut == -1 || redirErr == -1) exit_shell("exit");
     cmd->type = EXEC;
     exec_cmd(cmd);
+}
+//------------------------------------------------------------------------------
+// RUN PIPE
+//------------------------------------------------------------------------------
+static void runPipe(struct cmd* left, struct cmd* right, int last) {
+    int pipeFd[2];
+    if (pipe(pipeFd) == -1) perr("ERROR: pipe() failed in function runPipe()");
+    // if (redir(pipeFd[0], pipeFd[1]) == -1) perr("ERROR redir failed");
+
+    int status = 0;
+
+    pid_t p = fork();
+    if (p == -1) perr("ERROR fork failed in function runPipe()");
+    if (p == 0) {
+        // child process
+        close(pipeFd[0]); // Close unused write end
+        if (redir(pipeFd[1], STDOUT_FILENO) == -1) perr("ERROR redir failed");
+        exec_cmd(left);
+    } else {
+        // parent process
+        waitpid(p, &status, 0);
+        close(pipeFd[1]); // Close unused read end
+        if (redir(pipeFd[0], STDIN_FILENO) == -1) perr("ERROR redir failed");
+        if (last) exec_cmd(right);
+    }
 }
 //------------------------------------------------------------------------------
 // RUN MULTIPLE PIPE
@@ -270,6 +251,19 @@ char** getCommands(char* cmd, size_t* size) {
     commands[*size] = NULL;
     getSize(cmd, commands, saveCommand);
     return commands;
+}
+//------------------------------------------------------------------------------
+// SAVE COMMAND
+//------------------------------------------------------------------------------
+static int saveCommand(char** command, char* left) {
+    size_t size = strlen(left);
+    *command = (char*) malloc(sizeof(char) * (size + 1));
+    if (!*command) {
+        printf("ERROR: command = malloc() failed");
+        return 1;
+    }
+    strncpy(*command, left, size+1);
+    return 0;
 }
 //------------------------------------------------------------------------------
 // CREATE COMMANDS
