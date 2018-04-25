@@ -239,6 +239,19 @@ int freeCommand(char* commands[], size_t size) {
     return 0;
 }
 //------------------------------------------------------------------------------
+// SAVE COMMAND
+//------------------------------------------------------------------------------
+static int saveCommand(char** command, char* left) {
+    size_t size = strlen(left);
+    *command = (char*) malloc(sizeof(char) * (size + 1));
+    if (!*command) {
+        printf("ERROR: command = malloc() failed");
+        return 1;
+    }
+    strncpy(*command, left, size+1);
+    return 0;
+}
+//------------------------------------------------------------------------------
 // GET COMMANDS
 //------------------------------------------------------------------------------
 char** getCommands(char* cmd, size_t* size) {
@@ -251,19 +264,6 @@ char** getCommands(char* cmd, size_t* size) {
     commands[*size] = NULL;
     getSize(cmd, commands, saveCommand);
     return commands;
-}
-//------------------------------------------------------------------------------
-// SAVE COMMAND
-//------------------------------------------------------------------------------
-static int saveCommand(char** command, char* left) {
-    size_t size = strlen(left);
-    *command = (char*) malloc(sizeof(char) * (size + 1));
-    if (!*command) {
-        printf("ERROR: command = malloc() failed");
-        return 1;
-    }
-    strncpy(*command, left, size+1);
-    return 0;
 }
 //------------------------------------------------------------------------------
 // CREATE COMMANDS

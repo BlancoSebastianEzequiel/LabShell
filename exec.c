@@ -58,24 +58,6 @@ static void set_environ_vars(char** eargv, int eargc) {
 	}
 }
 //------------------------------------------------------------------------------
-// OPEN REDIR FD
-//------------------------------------------------------------------------------
-// opens the file in which the stdin/stdout or
-// stderr flow will be redirected, and returns
-// the file descriptor
-//
-// Find out what permissions it needs.
-// Does it have to be closed after the execve(2) call?
-//
-// Hints:
-// - if O_CREAT is used, add S_IWUSR and S_IRUSR
-// 	to make it a readable normal file
-static int open_redir_fd(char* file) {
-
-	// Your code here
-	return -1;
-}
-//------------------------------------------------------------------------------
 // EXEC CMD
 //------------------------------------------------------------------------------
 // executes a command - does not return
