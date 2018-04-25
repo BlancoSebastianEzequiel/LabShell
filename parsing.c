@@ -27,7 +27,23 @@ static bool parse_redir_flow(struct execcmd* c, char* arg) {
 
 	int inIdx, outIdx;
 
-	if (parsing(c, arg)) return true;  // Challenge Parte 2: Flujo estándar
+	// Challenge Parte 2: Flujo estándar
+	size_t size = strlen(arg);
+	size_t append = 0;
+	size_t redirErrOut = 0;
+	for (size_t i = 0; i < size; ++i) {
+		if (arg[i] == '>' && (i == 0 || i == 1)) append++;
+		if (arg[i] == '&' && i == 0) redirErrOut++;
+	}
+
+	if (redirErrOut == 1 && append == 1) {
+		strcpy(c->out_file, &arg[2]);
+		strcpy(c->err_file, &arg[2]);
+		free(arg);
+		c->type = REDIR;
+		return true;
+	}
+
 	// flow redirection for output
 	if ((outIdx = block_contains(arg, '>')) >= 0) {
 		switch (outIdx) {

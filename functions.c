@@ -135,8 +135,8 @@ void runRedir(struct cmd* cmd) {
     int fdErr = openRedirFd(execcmd->err_file);
 
     int redirIn = redir(fdIn, STDIN_FILENO);
-    int redirOut = redir(fdOut, STDOUT_FILENO);
     int redirErr = redir(fdErr, STDERR_FILENO);
+    int redirOut = redir(fdOut, STDOUT_FILENO);
 
     if (redirIn == -1 || redirOut == -1 || redirErr == -1) exit_shell("exit");
     cmd->type = EXEC;
@@ -177,27 +177,6 @@ void runMultiplePipe(struct cmd* cmd) {
         if (i == pipecmd->size-2) last = true;
         runPipe(pipecmd->cmdVec[i], pipecmd->cmdVec[i+1], last);
     }
-}
-//------------------------------------------------------------------------------
-// PARSING
-//------------------------------------------------------------------------------
-int parsing(struct execcmd* c, char* arg) {
-    size_t size = strlen(arg);
-    size_t append = 0;
-    size_t redirErrOut = 0;
-    for (size_t i = 0; i < size; ++i) {
-        if (arg[i] == '>' && (i == 0 || i == 1)) append++;
-        if (arg[i] == '&' && i == 0) redirErrOut++;
-    }
-
-    if (redirErrOut == 1 && append == 1) {
-        strcpy(c->out_file, &arg[2]);
-        strcpy(c->err_file, &arg[2]);
-        free(arg);
-        c->type = REDIR;
-        return true;
-    }
-    return false;
 }
 //------------------------------------------------------------------------------
 // GET SIZE
