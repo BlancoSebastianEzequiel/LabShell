@@ -1,5 +1,4 @@
 #include "parsing.h"
-#include "functions.h"
 #include "general.h"
 //------------------------------------------------------------------------------
 // GET TOKEN
