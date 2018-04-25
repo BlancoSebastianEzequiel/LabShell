@@ -52,6 +52,10 @@ int execBackground(struct cmd* cmd, pid_t pidChild) {
     scmdBack[posBack] = (char*) malloc(sizeof(char) * (size+1));
     strncpy(scmdBack[posBack], cmd->scmd, size+1);
     posBack++;
+    // Vuelvo al principio ya que a medida que imprimo por pantalla se va
+    // liberando memoria y guardando punteros a null asique no habria
+    // corrupcion de memoria
+    if (posBack >= MAX_BACK) posBack = 0;
     print_back_info(cmd);
     return true;
 }
@@ -135,8 +139,8 @@ void runRedir(struct cmd* cmd) {
     int fdErr = openRedirFd(execcmd->err_file);
 
     int redirIn = redir(fdIn, STDIN_FILENO);
-    int redirErr = redir(fdErr, STDERR_FILENO);
     int redirOut = redir(fdOut, STDOUT_FILENO);
+    int redirErr = redir(fdErr, STDERR_FILENO);
 
     if (redirIn == -1 || redirOut == -1 || redirErr == -1) exit_shell("exit");
     cmd->type = EXEC;
