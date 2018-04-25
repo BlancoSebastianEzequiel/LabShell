@@ -28,8 +28,6 @@ int run_cmd(char* cmd) {
 
 	// parses the command line
 	parsed = parse_line(cmd);
-	struct execcmd* execcmd = (struct execcmd*) parsed;
-	setEnvironmentVariables(execcmd->eargv, execcmd->eargc);
 	
 	// forks and run the command
 	if ((p = fork()) == 0) {

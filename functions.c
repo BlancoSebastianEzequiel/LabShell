@@ -7,6 +7,7 @@
 #include "printstatus.h"
 #include "parsing.h"
 #include "exec.h"
+#include "builtin.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -20,30 +21,10 @@
 //------------------------------------------------------------------------------
 pid_t pidBack[MAX_BACK];
 char* scmdBack[MAX_BACK];
-size_t pos = 0;
+size_t posBack = 0;
 //******************************************************************************
 // INICIO FUNCIONES ESTATICAS
 //******************************************************************************
-//------------------------------------------------------------------------------
-// IS EQUAL TO IN N BYTES
-//------------------------------------------------------------------------------
-static int isEqualToInNBytes(const char* str, const char* cmp, size_t bytes) {
-    for (size_t i = 0; i < bytes; ++i) {
-        if (str[i] != cmp[i]) return false;
-    }
-    return true;
-}
-//------------------------------------------------------------------------------
-// FIND FIRS CARACTER AFTER SPACE
-//------------------------------------------------------------------------------
-static int findFirstCaracterAfterSpace(const char* str, int offset) {
-    size_t size = strlen(str);
-    for (size_t i = 0; i < size; ++i) {
-        if (str[i] == SPACE) continue;
-        return i+offset;
-    }
-    return -1;
-}
 //------------------------------------------------------------------------------
 // GET ENVIRONMENT VALUE
 //------------------------------------------------------------------------------
@@ -72,21 +53,6 @@ static int redir(int oldFd, int newFd) {
     int fd = dup2(oldFd, newFd);
     if (fd == -1) perr("ERROR: dup2(%d, %d) filed", oldFd, newFd);
     return fd;
-}
-//------------------------------------------------------------------------------
-// PWD
-//------------------------------------------------------------------------------
-char* getWorkingDirectory() {
-    char* directory = (char*) malloc(sizeof(char)* PATH_MAX);
-    getcwd(directory, PATH_MAX);
-    size_t i = 1;
-    while (directory == NULL) {
-        free(directory);
-        directory = (char*) malloc(sizeof(char)* PATH_MAX*i);
-        getcwd(directory, PATH_MAX);
-        i++;
-    }
-    return directory;
 }
 //------------------------------------------------------------------------------
 // SAVE COMMAND
@@ -155,6 +121,7 @@ static void handler(int signum, siginfo_t* info, void* context) {
 //------------------------------------------------------------------------------
 int execCommand(struct cmd* cmd) {
     struct execcmd* execcmd = (struct execcmd*) cmd;
+    setEnvironmentVariables(execcmd->eargv, execcmd->eargc);
     if (execcmd->argc == 0) return false;
     const char* file = (const char*) execcmd->argv[0];
     if (execvp(file, execcmd->argv) == -1) {
@@ -195,43 +162,6 @@ char* expandEnvironmentVariables(char* arg) {
     }
 }
 //------------------------------------------------------------------------------
-// CD
-//------------------------------------------------------------------------------
-int changeDirectory(char* cmd) {
-    if (!isEqualToInNBytes(cmd, "cd", 2)) return false;
-    int idx = findFirstCaracterAfterSpace(cmd+2, 2);
-    int value;
-    if (idx == -1) {
-        value = chdir("/home");
-    } else {
-        value = chdir(cmd+idx);
-    }
-    char* directory = getWorkingDirectory();
-    strncpy(promt, directory, strlen(directory));
-    free(directory);
-    if (value == -1) perr("ERROR function chdir() failed");
-    return true;
-}
-//------------------------------------------------------------------------------
-// EXIT
-//------------------------------------------------------------------------------
-int exitNicely(char* cmd) {
-    if (!isEqualToInNBytes(cmd, "exit", 4)) return false;
-    int status = 0;
-    exit(status & 0377);
-    return true;
-}
-//------------------------------------------------------------------------------
-// PWD
-//------------------------------------------------------------------------------
-int printWorkingDirectory(char* cmd) {
-    if (!isEqualToInNBytes(cmd, "pwd", 3)) return false;
-    char* directory = getWorkingDirectory();
-    printf("%s\n", directory);
-    free(directory);
-    return true;
-}
-//------------------------------------------------------------------------------
 // SET ENVIRONMENT VARIABLES
 //------------------------------------------------------------------------------
 void setEnvironmentVariables(char** eargv, int eargc) {
@@ -267,11 +197,11 @@ void runBackground(struct cmd* cmd) {
 //------------------------------------------------------------------------------
 int execBackground(struct cmd* cmd, pid_t pidChild) {
     if (cmd->type != BACK) return false;
-    pidBack[pos] = pidChild;
+    pidBack[posBack] = pidChild;
     size_t size = strlen(cmd->scmd);
-    scmdBack[pos] = (char*) malloc(sizeof(char) * (size+1));
-    strncpy(scmdBack[pos], cmd->scmd, size+1);
-    pos++;
+    scmdBack[posBack] = (char*) malloc(sizeof(char) * (size+1));
+    strncpy(scmdBack[posBack], cmd->scmd, size+1);
+    posBack++;
     print_back_info(cmd);
     return true;
 }
@@ -328,7 +258,7 @@ void runRedir(struct cmd* cmd) {
     int redirOut = redir(fdOut, STDOUT_FILENO);
     int redirErr = redir(fdErr, STDERR_FILENO);
 
-    if (redirIn == -1 || redirOut == -1 || redirErr == -1) exitNicely("exit");
+    if (redirIn == -1 || redirOut == -1 || redirErr == -1) exit_shell("exit");
     cmd->type = EXEC;
     exec_cmd(cmd);
 }
