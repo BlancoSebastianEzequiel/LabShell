@@ -136,7 +136,13 @@ void runRedir(struct cmd* cmd) {
 
     int fdIn = openRedirFd(execcmd->in_file);
     int fdOut = openRedirFd(execcmd->out_file);
-    int fdErr = openRedirFd(execcmd->err_file);
+    int fdErr;
+    if (strcmp(execcmd->out_file, execcmd->err_file) != 0) {
+        fdErr = openRedirFd(execcmd->err_file);
+    }
+    else {
+        fdErr = 1;
+    }
 
     int redirIn = redir(fdIn, STDIN_FILENO);
     int redirOut = redir(fdOut, STDOUT_FILENO);
