@@ -54,7 +54,7 @@ int run_cmd(char* cmd) {
 	// waits for the process to finish
 	if (!execBackground(parsed, p)) {
 		waitpid(p, &status, 0);
-		printf("%s\n", backgroundMsg);
+		if (backgroundMsg[0] != END_STRING) printf("%s\n", backgroundMsg);
 		backgroundMsg[0] = END_STRING;
 	}
 
